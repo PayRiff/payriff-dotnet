@@ -9,18 +9,20 @@
     <RootNamespace>Payriff</RootNamespace>
 
     <PackageId>Payriff</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Payriff</Authors>
     <Description>.NET client for the Payriff merchant API: orders, direct card payments, saved cards, transactions, payouts and invoices.</Description>
     <PackageTags>payriff;payments;azerbaijan</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/payriff/payriff-dotnet</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/payriff/payriff-dotnet</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <RepositoryUrl>https://github.com/PayRiff/payriff-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/PayRiff/payriff-dotnet</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../icon.png" Pack="true" PackagePath="/" />
     <InternalsVisibleTo Include="Payriff.Tests" />
   </ItemGroup>
 

@@ -12,7 +12,7 @@ public sealed class PayriffOptions
 
 public sealed class PayriffClient : IDisposable
 {
-    public const string Version = "0.1.0";
+    public const string Version = "0.1.1";
     public const string ProductionUrl = "https://api.payriff.com";
 
     private readonly HttpClient? _ownedHttpClient;
