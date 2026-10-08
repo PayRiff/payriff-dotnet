@@ -9,8 +9,6 @@ transactions, payouts and invoices.
 
 ## Installation
 
-> The package is not yet published to NuGet.
-
 ```bash
 dotnet add package Payriff
 ```

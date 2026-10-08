@@ -9,7 +9,7 @@
     <RootNamespace>Payriff</RootNamespace>
 
     <PackageId>Payriff</PackageId>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Payriff</Authors>
     <Description>.NET client for the Payriff merchant API: orders, direct card payments, saved cards, transactions, payouts and invoices.</Description>
     <PackageTags>payriff;payments;azerbaijan</PackageTags>

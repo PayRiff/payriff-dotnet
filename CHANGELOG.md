@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-10-08)
+
+- First release on NuGet.
+
 ## 0.1.1 (2026-10-07)
 
 - NuGet package icon and repository links.
