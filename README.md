@@ -1,11 +1,11 @@
 # Payriff .NET SDK
 
-.NET client for the Payriff merchant API: orders, direct (host-to-host) card payments, saved cards,
+.NET client for the Payriff merchant API: orders, saved-card payments, saved cards,
 transactions, payouts and invoices.
 
 - .NET 8 or newer
 - No dependencies outside the .NET runtime
-- Talks to `https://api.payriff.com`
+- Talks to `https://api.payriff.com` (Azerbaijan) or `https://api.gccpay.sa` (Saudi Arabia)
 
 ## Installation
 
@@ -51,7 +51,8 @@ builder.Services.AddSingleton(new PayriffClient(new PayriffOptions
 | `MerchantId` | for payouts and invoices | — | Merchant ID (e.g. `ES1000000`). |
 | `Timeout` | no | 60 s | Total request timeout. Bank operations can take tens of seconds. |
 | `ConnectTimeout` | no | 10 s | Connection timeout. |
-| `CardEncryptionKey` | no | built-in Payriff key | Only if Payriff rotates the card-encryption key. Base64 or PEM. |
+| `Region` | no | `Region.Azerbaijan` | API region. Sets the base URL and the default currency. |
+| `BaseUrl` | no | from `Region` | Override the API URL, e.g. for testing. The currency still comes from `Region`. |
 
 You can also pass your own `HttpClient` (`new PayriffClient(options, httpClient)`), for example one
 from `IHttpClientFactory`. Configure its handler with `AllowAutoRedirect = false`; Payriff signals some
@@ -59,13 +60,31 @@ outcomes with redirect status codes that must not be followed.
 
 Keep the app key in user secrets, environment variables or a vault. Never commit it.
 
+### Saudi Arabia
+
+```csharp
+using var payriff = new PayriffClient(new PayriffOptions
+{
+    AppKey = Environment.GetEnvironmentVariable("PAYRIFF_APP_KEY")!,
+    Region = Region.Saudi,
+});
+```
+
+| Region | API | Default currency |
+|---|---|---|
+| `Region.Azerbaijan` | `https://api.payriff.com` | `Currency.Azn` |
+| `Region.Saudi` | `https://api.gccpay.sa` | `Currency.Sar` |
+
+Use the app key from the dashboard of the same region (`dashboard.gccpay.sa` for Saudi Arabia).
+A `Currency` set on a request always wins over the region default.
+
 ## Orders
 
 ```csharp
 var created = await payriff.Orders.CreateAsync(new CreateOrderRequest
 {
     Amount = 25.00m,
-    Currency = Currency.Azn,           // default AZN
+    Currency = Currency.Azn,           // default: the region currency
     Operation = Operation.PreAuth,     // default Purchase
     Language = Language.Az,
     Description = "Booking #77",
@@ -87,34 +106,7 @@ byte[] receiptPdf = await payriff.Orders.DownloadReceiptAsync(created.OrderId);
 `Refunded`. If Payriff adds a status that this SDK version does not know, it reads as
 `PaymentStatus.Unknown` instead of failing.
 
-## Direct payments (host-to-host)
-
-You collect the card details yourself, and the SDK encrypts them before sending
-(AES-256-GCM + RSA-OAEP). Raw card data never leaves your server in clear text, but your
-systems still handle card data, so PCI DSS requirements apply to you.
-
-```csharp
-var result = await payriff.Payments.DirectPayAsync(new DirectPayRequest
-{
-    Amount = 1.00m,
-    Description = "Order #1002",
-    CallbackUrl = "https://shop.example/payriff/callback",
-    RequestRrn = "order-1002",
-    Card = new CardData(pan: "4169 7413 3015 1979", cardHolder: "JOHN DOE", expiryMonth: "11", expiryYear: "27", cvv: "123"),
-});
-
-if (result.Redirect)
-{
-    // 3-D Secure: send the customer's browser to result.RedirectUrl.
-    // The final status arrives via your callback or payriff.Orders.GetAsync(result.OrderId).
-}
-```
-
-`CardData` strips spaces and dashes, pads the month (`1` → `01`), expands a 2-digit year (`27` → `2027`)
-and rejects malformed values before any network call. Its `ToString()` and JSON serialization show
-only a masked card number.
-
-### Charging a saved card
+## Charging a saved card
 
 ```csharp
 var charge = await payriff.Payments.AutoPayAsync(new AutoPayRequest

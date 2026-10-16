@@ -6,14 +6,13 @@ public sealed class PayriffOptions
     public string? MerchantId { get; init; }
     public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(60);
     public TimeSpan ConnectTimeout { get; init; } = TimeSpan.FromSeconds(10);
-    public string? CardEncryptionKey { get; init; }
-    public Uri BaseUrl { get; init; } = new(PayriffClient.ProductionUrl);
+    public Region Region { get; init; } = Region.Azerbaijan;
+    public Uri? BaseUrl { get; init; }
 }
 
 public sealed class PayriffClient : IDisposable
 {
-    public const string Version = "0.1.2";
-    public const string ProductionUrl = "https://api.payriff.com";
+    public const string Version = "0.2.0";
 
     private readonly HttpClient? _ownedHttpClient;
 
@@ -38,7 +37,8 @@ public sealed class PayriffClient : IDisposable
         {
             throw new ArgumentException("Timeouts must be positive", nameof(options));
         }
-        var encryptor = new CardEncryptor(options.CardEncryptionKey ?? CardEncryptor.ProductionKey);
+        var baseUrl = options.BaseUrl?.ToString() ?? options.Region.BaseUrl();
+        var currency = options.Region.DefaultCurrency();
         if (httpClient is null)
         {
             _ownedHttpClient = new HttpClient(new SocketsHttpHandler
@@ -52,13 +52,13 @@ public sealed class PayriffClient : IDisposable
             };
             httpClient = _ownedHttpClient;
         }
-        var transport = new Transport(httpClient, options.BaseUrl.ToString(), options.AppKey, options.MerchantId, options.Timeout);
-        Orders = new OrdersService(transport);
-        Payments = new PaymentsService(transport, encryptor);
+        var transport = new Transport(httpClient, baseUrl, options.AppKey, options.MerchantId, options.Timeout);
+        Orders = new OrdersService(transport, currency);
+        Payments = new PaymentsService(transport, currency);
         Cards = new CardsService(transport);
         Transactions = new TransactionsService(transport);
         Payouts = new PayoutsService(transport);
-        Invoices = new InvoicesService(transport);
+        Invoices = new InvoicesService(transport, currency);
     }
 
     public OrdersService Orders { get; }

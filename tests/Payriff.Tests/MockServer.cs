@@ -55,13 +55,13 @@ public sealed class MockServer : IDisposable
     public void OkRaw(string method, string url, string payloadJson)
         => Stub(method, url, body: $"{{\"code\":\"00000\",\"message\":\"Operation performed successfully\",\"payload\":{payloadJson}}}");
 
-    public PayriffClient Client(string? merchantId = "ES1000000", string? cardEncryptionKey = null)
+    public PayriffClient Client(string? merchantId = "ES1000000", Region region = Region.Azerbaijan)
         => new(new PayriffOptions
         {
             AppKey = "app-key",
             MerchantId = merchantId,
             BaseUrl = new Uri(Url),
-            CardEncryptionKey = cardEncryptionKey,
+            Region = region,
         });
 
     private async Task LoopAsync()

@@ -59,7 +59,13 @@ public sealed class OrdersService
 {
     private readonly Transport _transport;
 
-    internal OrdersService(Transport transport) => _transport = transport;
+    private readonly Currency _defaultCurrency;
+
+    internal OrdersService(Transport transport, Currency defaultCurrency)
+    {
+        _transport = transport;
+        _defaultCurrency = defaultCurrency;
+    }
 
     public async Task<CreateOrderResponse> CreateAsync(CreateOrderRequest request, CancellationToken cancellationToken = default)
     {
@@ -67,7 +73,7 @@ public sealed class OrdersService
         var body = new Body
         {
             ["amount"] = Guard.Positive(request.Amount, nameof(request.Amount)),
-            ["currency"] = request.Currency,
+            ["currency"] = request.Currency ?? _defaultCurrency,
             ["operation"] = request.Operation,
         }
             .Set("language", request.Language)
@@ -135,41 +141,12 @@ public sealed class OrdersService
 public sealed class PaymentsService
 {
     private readonly Transport _transport;
-    private readonly CardEncryptor _encryptor;
+    private readonly Currency _defaultCurrency;
 
-    internal PaymentsService(Transport transport, CardEncryptor encryptor)
+    internal PaymentsService(Transport transport, Currency defaultCurrency)
     {
         _transport = transport;
-        _encryptor = encryptor;
-    }
-
-    public async Task<DirectPayResponse> DirectPayAsync(DirectPayRequest request, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(request.Card);
-        var body = new Body
-        {
-            ["amount"] = Guard.Positive(request.Amount, nameof(request.Amount)),
-            ["operation"] = request.Operation,
-            ["currency"] = request.Currency,
-            ["description"] = Guard.Required(request.Description, nameof(request.Description)),
-        }
-            .Set("callbackUrl", request.CallbackUrl)
-            .Set("threeDS", request.ThreeDS)
-            .Set("customFields", request.CustomFields);
-        var (encryptedMessage, secretKey) = _encryptor.Encrypt(request.Card);
-        body["paymentData"] = new Dictionary<string, object>
-        {
-            ["paymentWay"] = "DIRECT",
-            ["encryptedMessage"] = encryptedMessage,
-            ["cardSave"] = request.CardSave,
-        };
-        var api = new ApiRequest(HttpMethod.Post, "/api/v3/directPay")
-        {
-            Headers = new Dictionary<string, string?> { ["X-REQUEST-RRN"] = request.RequestRrn, ["x-secret-key"] = secretKey },
-            Body = body,
-        };
-        return await _transport.ExecuteAsync<DirectPayResponse>(api, cancellationToken).ConfigureAwait(false) ?? new DirectPayResponse();
+        _defaultCurrency = defaultCurrency;
     }
 
     public async Task<AutoPayResponse> AutoPayAsync(AutoPayRequest request, CancellationToken cancellationToken = default)
@@ -180,7 +157,7 @@ public sealed class PaymentsService
             ["cardUuid"] = Guard.Required(request.CardUuid, nameof(request.CardUuid)),
             ["amount"] = Guard.Positive(request.Amount, nameof(request.Amount)),
             ["operation"] = request.Operation,
-            ["currency"] = request.Currency,
+            ["currency"] = request.Currency ?? _defaultCurrency,
             ["description"] = Guard.Required(request.Description, nameof(request.Description)),
         }
             .Set("callbackUrl", request.CallbackUrl)
@@ -356,7 +333,13 @@ public sealed class InvoicesService
 {
     private readonly Transport _transport;
 
-    internal InvoicesService(Transport transport) => _transport = transport;
+    private readonly Currency _defaultCurrency;
+
+    internal InvoicesService(Transport transport, Currency defaultCurrency)
+    {
+        _transport = transport;
+        _defaultCurrency = defaultCurrency;
+    }
 
     public async Task<Invoice> CreateAsync(InvoiceCreateRequest request, CancellationToken cancellationToken = default)
     {
@@ -365,7 +348,7 @@ public sealed class InvoicesService
         {
             throw new ArgumentException("Amount is required", nameof(request));
         }
-        var body = new Body { ["currencyType"] = request.Currency }
+        var body = new Body { ["currencyType"] = request.Currency ?? _defaultCurrency }
             .Set("amount", request.Amount)
             .Set("amountDynamic", request.AmountDynamic)
             .Set("languageType", request.Language)

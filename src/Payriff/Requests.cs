@@ -3,7 +3,7 @@ namespace Payriff;
 public sealed class CreateOrderRequest
 {
     public required decimal Amount { get; init; }
-    public Currency Currency { get; init; } = Currency.Azn;
+    public Currency? Currency { get; init; }
     public Language? Language { get; init; }
     public Operation Operation { get; init; } = Operation.Purchase;
     public string? Description { get; init; }
@@ -35,27 +35,13 @@ public sealed class CompleteRequest
     public string? CallbackUrl { get; init; }
 }
 
-public sealed class DirectPayRequest
-{
-    public required decimal Amount { get; init; }
-    public required string Description { get; init; }
-    public required CardData Card { get; init; }
-    public Operation Operation { get; init; } = Operation.Purchase;
-    public Currency Currency { get; init; } = Currency.Azn;
-    public string? CallbackUrl { get; init; }
-    public bool? ThreeDS { get; init; }
-    public IReadOnlyDictionary<string, string>? CustomFields { get; init; }
-    public bool CardSave { get; init; }
-    public string? RequestRrn { get; init; }
-}
-
 public sealed class AutoPayRequest
 {
     public required string CardUuid { get; init; }
     public required decimal Amount { get; init; }
     public required string Description { get; init; }
     public Operation Operation { get; init; } = Operation.Purchase;
-    public Currency Currency { get; init; } = Currency.Azn;
+    public Currency? Currency { get; init; }
     public string? CallbackUrl { get; init; }
     public bool? ThreeDS { get; init; }
     public bool? OneClickPayment { get; init; }
@@ -93,7 +79,7 @@ public sealed class InvoiceCreateRequest
 {
     public decimal? Amount { get; init; }
     public bool? AmountDynamic { get; init; }
-    public Currency Currency { get; init; } = Currency.Azn;
+    public Currency? Currency { get; init; }
     public Language? Language { get; init; }
     public string? FullName { get; init; }
     public string? Email { get; init; }

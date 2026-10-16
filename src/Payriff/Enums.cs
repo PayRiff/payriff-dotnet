@@ -1,5 +1,28 @@
 namespace Payriff;
 
+public enum Region
+{
+    Azerbaijan = 1,
+    Saudi,
+}
+
+public static class RegionExtensions
+{
+    public static string BaseUrl(this Region region) => region switch
+    {
+        Region.Azerbaijan => "https://api.payriff.com",
+        Region.Saudi => "https://api.gccpay.sa",
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, "Unknown region"),
+    };
+
+    public static Currency DefaultCurrency(this Region region) => region switch
+    {
+        Region.Azerbaijan => Currency.Azn,
+        Region.Saudi => Currency.Sar,
+        _ => throw new ArgumentOutOfRangeException(nameof(region), region, "Unknown region"),
+    };
+}
+
 public enum Currency
 {
     Azn = 1,

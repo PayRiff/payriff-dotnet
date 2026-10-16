@@ -119,40 +119,6 @@ public sealed class ApiTests : IDisposable
     }
 
     [Fact]
-    public async Task DirectPayEncryptsCardAndSendsSecretKey()
-    {
-        _server.OkRaw("POST", "/api/v3/directPay", """
-            {"orderId":"ORD-1","threeDS":true,"redirect":true,"redirectUrl":"https://acs.bank/3ds",
-             "transactionResponse":{"status":"CREATED","requestRrn":"req-1"}}
-            """);
-
-        var response = await _server.Client(cardEncryptionKey: CardKeys.PublicBase64).Payments.DirectPayAsync(new DirectPayRequest
-        {
-            Amount = 1.00m,
-            Description = "Order #1",
-            CallbackUrl = "https://shop.az/cb",
-            CardSave = true,
-            RequestRrn = "rrn-1",
-            Card = new CardData("4169741330151979", "JOHN DOE", "11", "2027", "123"),
-        });
-
-        var sent = _server.Last;
-        Assert.Equal("rrn-1", sent.Header("X-REQUEST-RRN"));
-        Assert.DoesNotContain("4169741330151979", sent.BodyText);
-        Assert.DoesNotContain("JOHN DOE", sent.BodyText);
-        var body = sent.Json.AsObject();
-        var paymentData = body["paymentData"]!.AsObject();
-        body.Remove("paymentData");
-        AssertJson("""{"amount":1.00,"operation":"PURCHASE","currency":"AZN","description":"Order #1","callbackUrl":"https://shop.az/cb"}""", body);
-        Assert.Equal("DIRECT", (string?)paymentData["paymentWay"]);
-        Assert.True((bool)paymentData["cardSave"]!);
-        Assert.Equal("""{"pan":"4169741330151979","cardHolder":"JOHN DOE","expiryYear":"2027","expiryMonth":"11","cvv":"123"}""",
-            CardKeys.Decrypt(sent.Header("x-secret-key")!, (string)paymentData["encryptedMessage"]!));
-        Assert.Equal(("ORD-1", true, true, "https://acs.bank/3ds", "CREATED"),
-            (response.OrderId, response.ThreeDS, response.Redirect, response.RedirectUrl, response.Transaction!.Status));
-    }
-
-    [Fact]
     public async Task AutoPaySendsExplicitCurrencyAndOneClickFlag()
     {
         _server.OkRaw("POST", "/api/v3/autoPay", """
@@ -172,6 +138,42 @@ public sealed class ApiTests : IDisposable
         Assert.Equal("rrn-2", _server.Last.Header("X-REQUEST-RRN"));
         AssertJson("""{"cardUuid":"card-uuid-1","amount":3.00,"operation":"PURCHASE","currency":"AZN","description":"Subscription","isOneCLickPayment":true}""", _server.Last.Json);
         Assert.Equal((PaymentStatus.Approved, true, false), (response.PaymentStatus, response.Auto, response.TransactionResponse!.ThreeDS));
+    }
+
+    [Fact]
+    public void RegionsMapToBaseUrlAndCurrency()
+    {
+        Assert.Equal(("https://api.payriff.com", Currency.Azn), (Region.Azerbaijan.BaseUrl(), Region.Azerbaijan.DefaultCurrency()));
+        Assert.Equal(("https://api.gccpay.sa", Currency.Sar), (Region.Saudi.BaseUrl(), Region.Saudi.DefaultCurrency()));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new PayriffClient(new PayriffOptions { AppKey = "k", Region = (Region)99 }));
+    }
+
+    [Fact]
+    public async Task SaudiDefaultsToSar()
+    {
+        var client = _server.Client(region: Region.Saudi);
+
+        _server.OkRaw("POST", "/api/v3/orders", """{"orderId":"ORD-1"}""");
+        await client.Orders.CreateAsync(new CreateOrderRequest { Amount = 1m });
+        Assert.Equal("SAR", (string?)_server.Last.Json["currency"]);
+
+        _server.OkRaw("POST", "/api/v3/autoPay", """{"orderId":"ORD-2"}""");
+        await client.Payments.AutoPayAsync(new AutoPayRequest { CardUuid = "card-1", Amount = 1m, Description = "x" });
+        Assert.Equal("SAR", (string?)_server.Last.Json["currency"]);
+
+        _server.OkRaw("POST", "/api/v2/invoices", """{"invoiceUuid":"inv-1"}""");
+        await client.Invoices.CreateAsync(new InvoiceCreateRequest { Amount = 1m });
+        Assert.Equal("SAR", (string?)_server.Last.Json["body"]!["currencyType"]);
+    }
+
+    [Fact]
+    public async Task ExplicitCurrencyWinsOverRegion()
+    {
+        _server.OkRaw("POST", "/api/v3/orders", """{"orderId":"ORD-1"}""");
+
+        await _server.Client(region: Region.Saudi).Orders.CreateAsync(new CreateOrderRequest { Amount = 1m, Currency = Currency.Usd });
+
+        Assert.Equal("USD", (string?)_server.Last.Json["currency"]);
     }
 
     [Fact]

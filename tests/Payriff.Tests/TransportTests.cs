@@ -188,8 +188,6 @@ public sealed class TransportTests : IDisposable
     public void ClientValidation()
     {
         Assert.StartsWith("AppKey is required", Assert.Throws<ArgumentException>(() => new PayriffClient(" ")).Message);
-        var keyError = Assert.Throws<ArgumentException>(() => new PayriffClient(new PayriffOptions { AppKey = "k", CardEncryptionKey = "nope" }));
-        Assert.StartsWith("Invalid RSA public key", keyError.Message);
 
         using var client = new PayriffClient("k");
         Assert.NotNull(client.Orders);

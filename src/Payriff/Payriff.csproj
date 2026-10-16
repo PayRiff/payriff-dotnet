@@ -9,9 +9,9 @@
     <RootNamespace>Payriff</RootNamespace>
 
     <PackageId>Payriff</PackageId>
-    <Version>0.1.2</Version>
+    <Version>0.2.0</Version>
     <Authors>Payriff</Authors>
-    <Description>.NET client for the Payriff merchant API: orders, direct card payments, saved cards, transactions, payouts and invoices.</Description>
+    <Description>.NET client for the Payriff merchant API: orders, saved-card payments, saved cards, transactions, payouts and invoices.</Description>
     <PackageTags>payriff;payments;azerbaijan</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
