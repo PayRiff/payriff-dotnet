@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - runtime: "8.0.x"
+            tfm: net8.0
+          - runtime: "9.0.x"
+            tfm: net9.0
+          - runtime: "10.0.x"
+            tfm: net10.0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            ${{ matrix.runtime }}
+            10.0.x
+      - run: dotnet test -c Release -p:PayriffTestTfm=${{ matrix.tfm }}
+      - run: dotnet pack src/Payriff -c Release
